@@ -1,7 +1,7 @@
 # Use a base image with Python and Chrome support
 FROM python:3.9-slim
 
-# Install system dependencies
+# Install dependencies (including wget, curl, unzip, etc.)
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -32,20 +32,25 @@ RUN apt-get update && apt-get install -y \
     libu2f-udev \
     && apt-get clean
 
-# Install Google Chrome
+# Install Google Chrome (Stable Version)
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt install -y ./google-chrome-stable_current_amd64.deb \
     && rm google-chrome-stable_current_amd64.deb
 
-# Get the matching Chromedriver version
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
+# Install dependencies for Chrome and Chromedriver
+RUN apt-get update && apt-get install -y \
+    chromium-driver \
+    && apt-get clean
+
+# Get the Chrome version and install matching Chromedriver
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') \
     && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
     && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip \
     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
     && chmod +x /usr/local/bin/chromedriver \
     && rm /tmp/chromedriver.zip
 
-# Install Python dependencies
+# Install Python dependencies (from a requirements.txt)
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
